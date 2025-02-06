@@ -577,7 +577,7 @@ void NSSolverStationary::assemble_system(bool global_first_iter, bool computing_
 }
 
 int NSSolverStationary::solve_system() {
-  SolverControl solver_control(20000, tolerance);
+  SolverControl solver_control(200000, tolerance);
   // Choose the correct preconditioner
   if (preconditioner_type == 0) {
       PreconditionBlockDiagonal preconditioner;
@@ -652,11 +652,11 @@ void NSSolverStationary::solve_newton()
 
   const unsigned int n_max_iters = 15;
   const double residual_tolerance = 1e-9;
-  double target_Re = Re;
+  double target_Re = 1/nu;
   bool global_first_iter = true;
   bool computing_stokes = true;
   bool inlet_reached = false;
-  pcout << "Target Re = " << target_Re << std::endl;
+  pcout << "Target viscosity = " << nu << std::endl;
 
   // First solve the Stokes problem, then becomes a NS with an ingreasingly more dominant convective term.
   for (double current_Re = 10.0; current_Re <= target_Re; current_Re += 20.0)

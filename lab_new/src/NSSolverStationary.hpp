@@ -191,7 +191,7 @@ public:
           const TrilinosWrappers::MPI::BlockVector &src) const
     {
       SolverControl solver_control_velocity(10000001,
-                                            1e-2 * src.block(0).l2_norm());
+                                            1e-4 * src.block(0).l2_norm());
 
       SolverFGMRES<TrilinosWrappers::MPI::Vector> solver_gmres_velocity(
           solver_control_velocity);
@@ -208,7 +208,7 @@ public:
       tmp.sadd(-1.0, src.block(1));
 
       SolverControl solver_control_pressure(100000,
-                                            1e-2 * src.block(1).l2_norm());
+                                            1e-5 * src.block(1).l2_norm());
       SolverCG<TrilinosWrappers::MPI::Vector> solver_cg_pressure(
           solver_control_pressure);
       solver_cg_pressure.solve(*pressure_mass,
@@ -344,9 +344,9 @@ public:
                      const unsigned int &solver_type_,
                      const double &tolerance_,
                      const unsigned int &preconditioner_type_,
-                     double Re_,
+                     double nu_,
                      bool read_mesh_from_file_)
-      : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)), mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)), pcout(std::cout, mpi_rank == 0), mesh_file_name(mesh_file_name_), mesh(MPI_COMM_WORLD), degree_velocity(degree_velocity_), degree_pressure(degree_pressure_), solver_type(solver_type_), tolerance(tolerance_), preconditioner_type(preconditioner_type_), mesh_size_x(mesh_size_x_), mesh_size_y(mesh_size_y_), Re(Re_), read_mesh_from_file(read_mesh_from_file_)
+      : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)), mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)), pcout(std::cout, mpi_rank == 0), mesh_file_name(mesh_file_name_), mesh(MPI_COMM_WORLD), degree_velocity(degree_velocity_), degree_pressure(degree_pressure_), solver_type(solver_type_), tolerance(tolerance_), preconditioner_type(preconditioner_type_), mesh_size_x(mesh_size_x_), mesh_size_y(mesh_size_y_), nu(nu_), read_mesh_from_file(read_mesh_from_file_)
   {
   }
 
@@ -388,8 +388,6 @@ protected:
 
   // Problem definition. ///////////////////////////////////////////////////////
 
-  // Kinematic viscosity [m2/s]
-  double nu = 0.001;  
 
   // Inlet velocity
   InletVelocity inlet_velocity;
@@ -413,7 +411,8 @@ protected:
   const unsigned int preconditioner_type;
   const unsigned int mesh_size_x;
   const unsigned int mesh_size_y;
-  double Re;
+  // Kinematic viscosity [m2/s]
+  double nu; 
   bool read_mesh_from_file;
 
   // Finite element space.

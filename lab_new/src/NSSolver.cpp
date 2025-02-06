@@ -1,4 +1,5 @@
 #include "NSSolver.hpp"
+#include <fstream>
 
 void NSSolver::setup()
 {
@@ -410,17 +411,6 @@ void NSSolver::assemble_system(bool first_iter)
 
           else
           {
-            // // Frechet derivative
-            // // First term
-            // cell_matrix(i, j) +=
-            //     fe_values[velocity].value(j, q) * velocity_gradient_loc[q] *
-            //     fe_values[velocity].value(i, q) * fe_values.JxW(q);
-
-            // // Second term
-            // cell_matrix(i, j) +=
-            //     velocity_loc[q] * fe_values[velocity].gradient(j, q) *
-            //     fe_values[velocity].value(i, q) * fe_values.JxW(q);
-
             for (unsigned int k = 0; k < dim; k++)
             {
               nonlinear_term[k] = 0.0;
@@ -486,10 +476,6 @@ void NSSolver::assemble_system(bool first_iter)
             scalar_product(velocity_gradient_loc[q],
                            fe_values[velocity].gradient(i, q)) *
             fe_values.JxW(q);
-
-        // // c(u;u,v)
-        // cell_rhs(i) -= velocity_loc[q] * velocity_gradient_loc[q] *
-        //                fe_values[velocity].value(i, q) * fe_values.JxW(q);
 
         // Compute residual associated with Newton linearization of (u . nabla) u
         // nabla u is a tensor, iterate over both dimensions
@@ -600,7 +586,6 @@ void NSSolver::assemble_system(bool first_iter)
 
 int NSSolver::solve_system()
 {
-    pcout << "Solver tolerance: " << tolerance << std::endl;
     SolverControl solver_control(100000, tolerance);
 
     // Choose the correct preconditioner
@@ -677,9 +662,9 @@ void NSSolver::solve_newton()
 
   const unsigned int n_max_iters = 10;
   const double residual_tolerance = 1e-9;
-  double target_Re = Re;
+  double target_Re = 1/nu;
   bool first_iter = true;
-  pcout << "Target Re = " << target_Re << std::endl;
+  pcout << "Target viscosity: " << nu << std::endl;
 
   for (double current_Re = 1.0; current_Re <= target_Re; current_Re += 10.0)
   {
@@ -964,6 +949,21 @@ void NSSolver::print_lift_coeff()
   pcout << "===============================================" << std::endl;
   compute_lift_coeff();
   pcout << "Lift coefficient: " << lift_coeff << std::endl;
+  // only the rank 0 process writes to the file
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) != 0)
+    return;
+  // Persistent index across function calls
+  static int index = 1; 
+  // open the file in append mode
+  std::ofstream file("lift_coefficients.csv", std::ios::app);
+  // Write the header only if the file is empty
+  if (file.tellp() == 0) {
+      file << "index,lift\n";
+  }
+  file << index << "," << lift_coeff << "\n";
+  // Increment index for the next time step
+  index++;
+  file.close();
 }
 
 void NSSolver::print_drag_coeff()
@@ -971,6 +971,21 @@ void NSSolver::print_drag_coeff()
   pcout << "===============================================" << std::endl;
   compute_drag_coeff();
   pcout << "Drag coefficient: " << drag_coeff << std::endl;
+  // only the rank 0 process writes to the file
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) != 0)
+    return;
+  // Persistent index across function calls
+  static int index_drag = 1;
+  // Open the file in append mode
+  std::ofstream file("drag_coefficients.csv", std::ios::app);
+  // Write the header only if the file is empty
+  if (file.tellp() == 0) {
+      file << "index,drag\n";
+  }
+  file << index_drag << "," << drag_coeff << "\n";
+  // Increment index for the next time step
+  index_drag++;
+  file.close();
 }
 
 void NSSolver::write_lift_drag_to_file() const

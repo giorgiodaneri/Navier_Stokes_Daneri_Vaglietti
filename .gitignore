@@ -3,3 +3,4 @@
 .vscode
 /results_sim*
 /output*
+*.msh

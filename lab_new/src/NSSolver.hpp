@@ -397,9 +397,9 @@ public:
            const unsigned int &solver_type_,
            const double &tolerance_,
            const unsigned int &preconditioner_type_,
-           double Re_,
+           double nu_,
            bool read_mesh_from_file_)
-      : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)), mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)), pcout(std::cout, mpi_rank == 0), mesh_file_name(mesh_file_name_), mesh(MPI_COMM_WORLD), degree_velocity(degree_velocity_), degree_pressure(degree_pressure_), T(T_), delta_t(delta_t_), solver_type(solver_type_), tolerance(tolerance_), preconditioner_type(preconditioner_type_), mesh_size_x(mesh_size_x_), mesh_size_y(mesh_size_y_), Re(Re_), read_mesh_from_file(read_mesh_from_file_)
+      : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)), mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)), pcout(std::cout, mpi_rank == 0), mesh_file_name(mesh_file_name_), mesh(MPI_COMM_WORLD), degree_velocity(degree_velocity_), degree_pressure(degree_pressure_), T(T_), delta_t(delta_t_), solver_type(solver_type_), tolerance(tolerance_), preconditioner_type(preconditioner_type_), mesh_size_x(mesh_size_x_), mesh_size_y(mesh_size_y_), nu(nu_), read_mesh_from_file(read_mesh_from_file_)
   {
   }
 
@@ -441,8 +441,6 @@ protected:
 
   // Problem definition. ///////////////////////////////////////////////////////
 
-  // Kinematic viscosity [m2/s]
-  double nu = 0.01;
 
   // Inlet velocity
   InletVelocity inlet_velocity;
@@ -479,7 +477,8 @@ protected:
   const unsigned int preconditioner_type;
   const unsigned int mesh_size_x;
   const unsigned int mesh_size_y;
-  const double Re;
+  // Kinematic viscosity [m2/s]
+  double nu;
   const bool read_mesh_from_file;
 
   // Finite element space.

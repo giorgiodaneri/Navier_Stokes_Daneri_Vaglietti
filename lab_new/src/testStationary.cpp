@@ -7,9 +7,9 @@
 void print_help() {
     std::cout << "Usage: ./NSSolver [options]\n\n"
               << "Options:\n"
-              << "  -M, --read-mesh-from-file  Read mesh from file instead or generate it inside the program\n"
+              << "  -M, --read-mesh-from-file Provide mesh file path to load it instead or generating it inside the program\n"
               << "  -m, --mesh-size X,Y       Set mesh size (two integers separated by a comma)\n"
-              << "  -r, --reynolds N         Set Reynolds number (floating point value)\n"
+              << "  -v, --viscosity D         Set viscosity value (floating point value)\n"
               << "  -s, --solver N            Select solver (valid values: 0: GMRES, 1: FGMRES, 2: Bicgstab)\n"
               << "  -t, --tolerance D         Set tolerance (floating point value)\n"
               << "  -p, --preconditioner N    Select preconditioner (valid values: 0: blockDiagonal, 1: blockTriangular, 2: aSIMPLE)\n"
@@ -23,7 +23,8 @@ int main(int argc, char *argv[]) {
     bool read_mesh_from_file = false;
     unsigned int degree_velocity = 3;
     unsigned int degree_pressure = 2;
-    double Re = 100.0;
+    std::string mesh_path = "";
+    double nu = 0.1;
     int mesh_size_x = 100, mesh_size_y = 100;
     int solver_type = 1;
     double tolerance = 1e-6;
@@ -31,9 +32,9 @@ int main(int argc, char *argv[]) {
 
     // Define long options
     static struct option long_options[] = {
-        {"read-mesh-from-file", no_argument, 0, 'M'},
+        {"read-mesh-from-file", required_argument, 0, 'M'},
         {"mesh-size", required_argument, 0, 'm'},
-        {"reynolds", required_argument, 0, 'r'},
+        {"viscosity", required_argument, 0, 'v'},
         {"solver", required_argument, 0, 's'},
         {"tolerance", required_argument, 0, 't'},
         {"preconditioner", required_argument, 0, 'p'},
@@ -43,10 +44,19 @@ int main(int argc, char *argv[]) {
 
     int opt;
     // Modified getopt_long string to match the required format
-    while ((opt = getopt_long(argc, argv, "M:m:r:s:t:p:h", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "M:m:v:s:t:p:h", long_options, NULL)) != -1) {
         switch (opt) {
             case 'M':
                 read_mesh_from_file = true;
+                if (optarg) {
+                    mesh_path = optarg;  
+                    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+                        std::cout << "Mesh file path: " << mesh_path << "\n";
+                } else {
+                    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+                        std::cerr << "Error: No file path provided for -M option.\n";
+                    return 1;
+                }
                 degree_velocity = 2;
                 degree_pressure = 1;
                 break;
@@ -63,8 +73,8 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             }
-            case 'r':
-                Re = std::atof(optarg);
+            case 'v':
+                nu = std::atof(optarg);
                 break;
             case 's':
                 solver_type = std::atoi(optarg);
@@ -98,7 +108,7 @@ int main(int argc, char *argv[]) {
     {
         std::cout << "--------- CONFIGURATION PARAMETERS --------- \n";
         std::cout << "Mesh size: " << mesh_size_x << "x" << mesh_size_y << "\n";
-        std::cout << "Reynolds number: " << Re << "\n";
+        std::cout << "Viscosity: " << nu << "\n";
         std::cout << "Solver type: ";
         if (solver_type == 0) {
         std::cout << "GMRES\n";
@@ -122,11 +132,8 @@ int main(int argc, char *argv[]) {
         }
         std::cout << "-----------------------------------------------\n";
     }
-  
-    // Mesh file name
-    const std::string mesh_file_name = "/home/users/gdaneri/navier_stokes_solver/lab_new/mesh/new_mesh.msh";
     
-    NSSolverStationary problem(mesh_file_name, degree_velocity, degree_pressure, mesh_size_x, mesh_size_y, solver_type, tolerance, preconditioner, Re, read_mesh_from_file);
+    NSSolverStationary problem(mesh_path, degree_velocity, degree_pressure, mesh_size_x, mesh_size_y, solver_type, tolerance, preconditioner, nu, read_mesh_from_file);
 
     problem.setup();
     problem.solve_newton();
