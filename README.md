@@ -23,7 +23,7 @@ This project is a Navier-Stokes solver designed to simulate fluid dynamics. The 
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/HliasGit/navier_stokes_solver.git
+    git clone https://github.com/giorgiodaneri/Navier_Stokes_Daneri_Vaglietti.git
     cd navier_stokes_solver
     ```
 
@@ -52,10 +52,20 @@ To run the stationary solver, use the following command:
 ```sh
 mpirun -n <number_of_processes> ./StationaryNSSolver [options]
 ```
-
+### Generate mesh from .geo file
+We prepared a simple script to generate a mesh from a .geo file. To use it, run the following command:
+```sh
+cd src/
+python3 generate_mesh.py <name_of_geo_file>
+```
+E.g.
+```sh
+python3 generate_mesh.py 2dCoarseMesh.geo
+```
+The script will generate the corresponding .msh file and position it in the mesh folder.
 ### Options
 
-- `-M, --read-mesh-from-file`: Read mesh from file instead of generating it inside the program.
+- `-M, --read-mesh-from-file`: Provide mesh file path to load it instead or generating it inside the program
 - `-m, --mesh-size X,Y`: Set mesh size (two integers separated by a comma).
 - `-v, --viscosity D` : Set viscosity value (floating point value).
 - `-s, --solver N`: Select solver (0: GMRES, 1: FGMRES, 2: BiCGStab).
@@ -66,10 +76,13 @@ mpirun -n <number_of_processes> ./StationaryNSSolver [options]
 Only for the unsteady version:
 - `-T, --time-span and time-step T,D`: Set time span and time step (two floating point values separated by a comma).
 
+Note that by not specifying the -M flag, the solver will use higher order polynomial for the velocity and pressure fields, of degree 3 and 2 respectively. It employs the scalar Lagrange $Q_p$ finite elements on hypercube cells. 
+By specifying the -M flag, the solver will use simplex elements, i.e. triangles in 2D, by the means of *FE_SimplexP*. This is because the mesh read from file use a triangulation with simplex elements, while the mesh generated internally uses hypercube elements. 
+
 ## Example
 
 ```sh
-mpirun -n 4 ./StationaryNSSolver -m 300,100 -r 100 -s 1 -t 0.0000000001 -p 0
+mpirun -n 8 ./StationaryNSSolver -M ../mesh/2dMeshCoarse.msh -v 0.01 -s 1 -t 0.000000001 -p 1
 ```
 
-This command runs the stationary solver with a mesh size of 300x100, Reynolds number of 100, using the FGMRES solver, a tolerance of 1e-10, and the blockDiagonal preconditioner.
+This command runs the stationary solver with a mesh size of 300x100, viscosity value of 0.01, using the FGMRES solver, a tolerance of 1e-10, and the blockTriangular preconditioner.
