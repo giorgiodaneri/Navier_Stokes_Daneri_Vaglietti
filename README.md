@@ -57,7 +57,7 @@ mpirun -n <number_of_processes> ./StationaryNSSolver [options]
 
 - `-M, --read-mesh-from-file`: Read mesh from file instead of generating it inside the program.
 - `-m, --mesh-size X,Y`: Set mesh size (two integers separated by a comma).
-- `-r, --reynolds N`: Set Reynolds number (floating point value).
+- `-v, --viscosity D` : Set viscosity value (floating point value).
 - `-s, --solver N`: Select solver (0: GMRES, 1: FGMRES, 2: BiCGStab).
 - `-t, --tolerance D`: Set tolerance (floating point value).
 - `-p, --preconditioner N`: Select preconditioner (0: blockDiagonal, 1: blockTriangular, 2: aSIMPLE).
