@@ -86,3 +86,22 @@ mpirun -n 8 ./StationaryNSSolver -M ../mesh/2dMeshCoarse.msh -v 0.01 -s 1 -t 0.0
 ```
 
 This command runs the stationary solver with a mesh size of 300x100, viscosity value of 0.01, using the FGMRES solver, a tolerance of 1e-10, and the blockTriangular preconditioner.
+
+### Running the code on a cluster
+If you have access to a cluster without deal.II and all the other libraries installed, you can leverage Singularity to run the code. You can used the latest version of the MK modules in order to create the container (2024 version). The following command allows to build a container from a given URI: 
+```sh
+singularity pull docker://pcafrica/mk:latest
+```
+Then launch the container:
+```sh
+singularity run mk\_{version}.sif
+```
+which allows us to compile the files as usual. Once inside the container, load the modules:
+```sh
+source /u/sw/etc/profile \&\& module load gcc-glibc dealii
+```
+and then compile the files. Then exit from the container and execute the Singularity Image Format:
+```sh
+singularity -s exec mk\_{version}.sif /bin/bash -c 'source /u/sw/etc/profile \&\& module load gcc-glibc dealii \&\& mpiexec -n 128 {exec\_path} [options]
+```
+The above command spawns 128 MPI processes to solve the system in parallel thanks to the Trilinos wrappers for MPI. In the scripts folder, we also provide slurm scripts to test both the steady and unsteady versions with configurable parameters. Such scripts produce a csv file containing the execution time and the parameters used for the simulation. We used them to conduct the scalability analysis on the Aion cluster of the University of Luxembourg. 
